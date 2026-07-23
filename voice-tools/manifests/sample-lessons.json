@@ -1,0 +1,22 @@
+{
+  "lessonId": "english-alphabet-a",
+  "language": "en",
+  "locale": "en-IN",
+  "segments": [
+    {
+      "id": "character",
+      "text": "A",
+      "outputFile": "character.mp3"
+    },
+    {
+      "id": "example-word",
+      "text": "A for Apple",
+      "outputFile": "example-word.mp3"
+    },
+    {
+      "id": "example-sentence",
+      "text": "Apple is a fruit",
+      "outputFile": "example-sentence.mp3"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+languages:
+  en:
+    locale: en-IN
+    voice_id: selected-after-review
+    speaking_rate: 0.88
+
+  hi:
+    locale: hi-IN
+    voice_id: selected-after-review
+    speaking_rate: 0.86
+
+  kn:
+    locale: kn-IN
+    voice_id: selected-after-review
+    speaking_rate: 0.84
