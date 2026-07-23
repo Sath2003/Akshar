@@ -1,0 +1,27 @@
+{
+  "name": "@education/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "vitest": "4.1.10"
+  }
+}

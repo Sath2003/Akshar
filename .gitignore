@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment — never commit real secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# pnpm-lock.yaml IS committed (reproducible installs)
+# Do NOT add it here
+
+# Logs
+*.log
+logs/
+
+# Turborepo (not used — kept in case of accidental creation)
+.turbo/
+
+# Testing
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/settings.json
