@@ -29,7 +29,8 @@ class MockVoiceProvider(VoiceProvider):
         speaking_rate: float,
         output_path: str,
     ) -> str:
-        # Mock generating audio
+        output_path = output_path.replace(".mp3", ".mock")
+        # Mock generating audio (does not produce playable audio)
         with open(output_path, "wb") as f:
-            f.write(f"MOCK AUDIO DATA\nText: '{text}'\nVoice: '{voice_id}'\nRate: {speaking_rate}".encode('utf-8'))
+            f.write(f"MOCK AUDIO DATA (NOT PLAYABLE)\nText: '{text}'\nVoice: '{voice_id}'\nRate: {speaking_rate}".encode('utf-8'))
         return output_path

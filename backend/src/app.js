@@ -1,10 +1,10 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
-import type { Env } from './env.js'
+
 import { registerRoutes } from './routes/index.js'
 
-export function buildApp(env: Env) {
+export function buildApp(env) {
   const app = Fastify({
     logger:
       env.NODE_ENV !== 'test'

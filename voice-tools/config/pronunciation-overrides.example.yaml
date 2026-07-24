@@ -1,5 +1,5 @@
 overrides:
   - language: kn
-    originalText: "Example Text"
-    synthesisText: "Ex-am-ple Tex-t"
-    reviewNotes: "Adjusted spelling for clearer child-friendly pronunciation"
+    originalText: 'Example Text'
+    synthesisText: 'Ex-am-ple Tex-t'
+    reviewNotes: 'Adjusted spelling for clearer child-friendly pronunciation'

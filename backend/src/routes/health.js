@@ -1,6 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify'
-
-export const healthRoutes: FastifyPluginAsync = async (app) => {
+export const healthRoutes = async (app) => {
   app.get(
     '/health',
     {

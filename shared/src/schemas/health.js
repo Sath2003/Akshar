@@ -5,4 +5,3 @@ export const healthResponseSchema = z.object({
   phase: z.number().int().positive(),
 })
 
-export type HealthResponse = z.infer<typeof healthResponseSchema>

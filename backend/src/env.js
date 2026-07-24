@@ -8,9 +8,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
 })
 
-export type Env = z.infer<typeof envSchema>
 
-export function parseEnv(raw: Record<string, string | undefined> = process.env): Env {
+
+export function parseEnv(raw = process.env) {
   const result = envSchema.safeParse(raw)
   if (!result.success) {
     const messages = result.error.issues

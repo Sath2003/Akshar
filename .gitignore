@@ -18,8 +18,6 @@ build/
 *.log
 logs/
 
-# Turborepo (not used — kept in case of accidental creation)
-.turbo/
 
 # Testing
 coverage/

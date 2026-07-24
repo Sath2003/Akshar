@@ -1,36 +1,25 @@
 // eslint.config.js — ESLint 9 flat config
-// Root package.json has "type":"module" so this file is treated as ESM.
-// No .mjs extension required.
 import js from '@eslint/js'
-import tseslint from 'typescript-eslint'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
 import reactRefreshPlugin from 'eslint-plugin-react-refresh'
 import globals from 'globals'
 
-export default tseslint.config(
-  // ── Global ignores ────────────────────────────────────────────────────────
+export default [
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/.turbo/**'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**'],
   },
-
-  // ── Base JS + TypeScript ──────────────────────────────────────────────────
   js.configs.recommended,
-  ...tseslint.configs.recommended,
-
   {
     languageOptions: {
       globals: { ...globals.node, ...globals.es2022 },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
-
-  // ── Frontend-specific rules ───────────────────────────────────────────────
   {
-    files: ['frontend/src/**/*.{ts,tsx}'],
+    files: ['frontend/src/**/*.{js,jsx}'],
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
@@ -38,6 +27,11 @@ export default tseslint.config(
     },
     languageOptions: {
       globals: { ...globals.browser },
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
     },
     rules: {
       'react/react-in-jsx-scope': 'off',
@@ -48,4 +42,4 @@ export default tseslint.config(
     },
     settings: { react: { version: 'detect' } },
   },
-)
+]

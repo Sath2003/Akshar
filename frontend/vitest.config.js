@@ -4,12 +4,11 @@ import { resolve } from 'path'
 export default defineConfig({
   resolve: {
     alias: {
-      '@education/shared': resolve(__dirname, '../shared/src/index.ts'),
+      '@education/shared': resolve(__dirname, '../shared/src/index.js'),
     },
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+    include: ['src/**/__tests__/**/*.test.{js,jsx}'],
   },
 })

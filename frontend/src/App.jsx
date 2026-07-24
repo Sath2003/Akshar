@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { healthResponseSchema, type HealthResponse } from '@education/shared'
+import { healthResponseSchema } from '@education/shared'
 
 export default function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [health, setHealth] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetch('/api/v1/health')

@@ -1,0 +1,11 @@
+{
+  "name": "@education/content",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "validate": "node validate.js"
+  },
+  "dependencies": {
+    "@education/shared": "file:../shared"
+  }
+}

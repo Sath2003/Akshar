@@ -1,19 +1,16 @@
 FROM node:22.12.0-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+WORKDIR /app
 
 FROM base AS builder
-WORKDIR /app
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
 COPY frontend/package.json ./frontend/
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 COPY shared ./shared
 COPY frontend ./frontend
-RUN pnpm --filter @education/shared build
-RUN pnpm --filter @education/frontend build
+RUN npm run build --workspace=@education/shared
+RUN npm run build --workspace=@education/frontend
 
 FROM nginx:1.27.4-alpine AS runner
 # Copy custom Nginx configuration

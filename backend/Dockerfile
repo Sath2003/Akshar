@@ -1,27 +1,26 @@
 FROM node:22.12.0-alpine AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+WORKDIR /app
 
 FROM base AS builder
-WORKDIR /app
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 COPY shared ./shared
 COPY backend ./backend
-RUN pnpm --filter @education/shared build
-RUN pnpm --filter @education/backend build
+RUN npm run build --workspace=@education/shared
+RUN npm run build --workspace=@education/backend
 
 # Remove development dependencies
-RUN pnpm --filter @education/backend deploy --prod /prod/backend
+RUN npm prune --omit=dev
 
 FROM base AS runner
-WORKDIR /app
-COPY --from=builder /prod/backend /app
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/backend ./backend
 
 USER node
 EXPOSE 4000
-CMD ["node", "dist/server.js"]
+CMD ["node", "backend/dist/server.js"]

@@ -1,7 +1,7 @@
 import { parseEnv } from './env.js'
 import { buildApp } from './app.js'
 
-async function main(): Promise<void> {
+async function main() {
   let env
   try {
     env = parseEnv(process.env)
