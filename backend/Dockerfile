@@ -9,8 +9,7 @@ RUN npm ci
 
 COPY shared ./shared
 COPY backend ./backend
-RUN npm run build --workspace=@education/shared
-RUN npm run build --workspace=@education/backend
+# No build step required for JS backend/shared
 
 # Remove development dependencies
 RUN npm prune --omit=dev
@@ -23,4 +22,4 @@ COPY --from=builder /app/backend ./backend
 
 USER node
 EXPOSE 4000
-CMD ["node", "backend/dist/server.js"]
+CMD ["node", "backend/src/server.js"]

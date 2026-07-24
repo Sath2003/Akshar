@@ -9,7 +9,6 @@ RUN npm ci
 
 COPY shared ./shared
 COPY frontend ./frontend
-RUN npm run build --workspace=@education/shared
 RUN npm run build --workspace=@education/frontend
 
 FROM nginx:1.27.4-alpine AS runner
