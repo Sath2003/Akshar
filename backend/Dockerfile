@@ -18,6 +18,9 @@ COPY shared ./shared
 COPY backend ./backend
 COPY content ./content
 
+# Generate Prisma client (must happen after schema is copied)
+RUN npx prisma generate --schema=backend/prisma/schema.prisma
+
 # Remove development-only dependencies
 RUN npm prune --omit=dev
 
@@ -35,4 +38,6 @@ COPY --from=builder /app/content ./content
 USER node
 
 EXPOSE 4000
-CMD ["node", "backend/src/server.js"]
+
+# Run migrations then start the server
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=backend/prisma/schema.prisma && node backend/src/server.js"]
