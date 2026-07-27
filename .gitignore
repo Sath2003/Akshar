@@ -11,13 +11,9 @@ build/
 .env.*.local
 !.env.example
 
-# pnpm-lock.yaml IS committed (reproducible installs)
-# Do NOT add it here
-
 # Logs
 *.log
 logs/
-
 
 # Testing
 coverage/
@@ -32,3 +28,19 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/settings.json
+
+# ── Nginx / Certbot (generated at deploy time) ────────────────────────────────
+# Never commit TLS private keys or certificates
+nginx/generated/
+certbot/conf/
+certbot/www/
+*.pem
+*.key
+*.crt
+*.csr
+
+# Voice tools
+venv/
+.venv/
+audio/
+*.mock

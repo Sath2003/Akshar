@@ -13,10 +13,14 @@
     "dev:backend": "npm run dev --workspace=@education/backend",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "tsc --project frontend/tsconfig.app.json --noEmit",
     "test": "npm run test --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "validate-content": "npm run validate --workspace=@education/content"
+    "validate-content": "npm run validate --workspace=@education/content",
+    "db:generate": "npm run db:generate --workspace=@education/backend",
+    "db:migrate": "npm run db:migrate --workspace=@education/backend",
+    "db:seed": "npm run db:seed --workspace=@education/backend"
   },
   "devDependencies": {
     "@eslint/js": "9.27.0",
@@ -25,13 +29,11 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "eslint-plugin-react-refresh": "0.4.19",
     "globals": "16.2.0",
-    "prettier": "3.4.2"
+    "prettier": "3.4.2",
+    "typescript": "5.7.3"
   },
   "engines": {
     "node": ">=22.12.0",
     "npm": ">=10"
-  },
-  "dependencies": {
-    "vitest": "4.1.10"
   }
 }

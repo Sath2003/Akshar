@@ -5,7 +5,7 @@
     "rootDir": "src",
     "jsx": "react-jsx",
     "paths": {
-      "@education/shared": ["../shared/src/index.ts"]
+      "@education/shared": ["../shared/src/index.js"]
     }
   },
   "include": ["src"],

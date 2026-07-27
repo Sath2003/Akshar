@@ -1,0 +1,24 @@
+# Bootstrap HTTP-only Nginx configuration
+# Used during initial Let's Encrypt certificate issuance only.
+# Once certs exist, this is replaced by production-https.conf.template.
+
+# WebSocket connection upgrade map
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    server_name ${APP_DOMAIN};
+
+    # Let's Encrypt ACME challenge webroot
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Reject all other traffic during bootstrap
+    location / {
+        return 503;
+    }
+}

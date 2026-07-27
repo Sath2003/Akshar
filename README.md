@@ -1,96 +1,161 @@
 # Akshar Educational Platform
 
-## Objective
-
-Akshar is a full-stack educational platform for delivering interactive lessons to children.
+An interactive educational platform delivering alphabet, number, and vocabulary lessons to children in English, Hindi, and Kannada.
 
 ## Supported Languages
 
-- English (en)
-- Hindi (hi)
-- Kannada (kn)
+| Code | Language |
+|------|----------|
+| `en` | English  |
+| `hi` | Hindi    |
+| `kn` | Kannada  |
 
 ## Supported Grade Levels
 
-- Nursery
-- LKG
-- UKG
+- Nursery (age 3–4)
+- LKG (age 4–5)
+- UKG (age 5–6)
+
+---
 
 ## Technology Stack
 
-- **Frontend:** React + Vite
-- **Backend:** Fastify + TypeScript
-- **Database:** PostgreSQL
-- **Infrastructure:** Docker Compose on AWS EC2
-- **Voice Tools:** Python (Offline processing)
+| Layer          | Technology                                      |
+|----------------|-------------------------------------------------|
+| Frontend       | React 19 + Vite + TypeScript                    |
+| Backend        | Fastify 5 + JavaScript ES modules               |
+| Shared         | JavaScript + Zod                                |
+| Content        | JavaScript content modules                      |
+| Database       | PostgreSQL 16                                   |
+| Assessment AI  | Gemini (open-ended grading)                     |
+| Lesson Audio   | Offline Azure Speech generation → S3            |
+| Public Proxy   | Nginx (edge reverse proxy)                      |
+| TLS            | Certbot + Let's Encrypt                         |
+| Deployment     | Docker Compose on AWS EC2                       |
+
+---
 
 ## Repository Structure
 
-- `/frontend`: React SPA
-- `/backend`: Fastify API server
-- `/shared`: Common TypeScript schemas and utilities
-- `/content`: Curriculum and lesson seed data
-- `/voice-tools`: Offline utilities for TTS generation and validation
+```
+/
+├── frontend/          React SPA (TypeScript + Vite)
+├── backend/           Fastify API (JavaScript ES modules)
+├── shared/            Shared Zod schemas and language utilities
+├── content/           Curriculum data and content validator
+├── voice-tools/       Offline Python TTS scripts (admin use only)
+├── nginx/             Edge nginx configuration templates
+├── certbot/           Let's Encrypt webroot (generated at deploy time)
+├── scripts/           Deployment and SSL management scripts
+└── docs/              Deployment and API documentation
+```
+
+---
 
 ## Local Development Setup
 
-1. Copy `.env.example` to `.env`
-2. Start the database:
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d
-   ```
-3. Install dependencies and start the servers:
-   ```bash
-   pnpm install
-   pnpm dev:frontend
-   pnpm dev:backend
-   ```
-   The frontend is available at `http://localhost:5173` and proxies API requests to `http://localhost:4000`.
+### Prerequisites
 
-## Environment Configuration
+- Node.js ≥ 22.12.0
+- npm ≥ 10
+- Docker + Docker Compose
 
-- Never commit real secrets.
-- Use `.env` and `.env.local` for local development.
-- Production environment variables are managed directly on the EC2 instance.
-- Avoid exposing backend secrets via `VITE_` variables.
-
-## Manual Validation Commands
-
-Use these commands before committing or deploying:
+### Install dependencies
 
 ```bash
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm validate-content
-pnpm build
+npm ci
 ```
+
+### Start the database
+
+```bash
+docker compose up -d postgres
+```
+
+### Run development servers
+
+```bash
+# Frontend (http://localhost:5173)
+npm run dev:frontend
+
+# Backend (http://localhost:4000)
+npm run dev:backend
+```
+
+The Vite dev server proxies `/api/*` to `http://localhost:4000`.
+
+---
+
+## Validation Commands
+
+Run all of these before committing:
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test
+npm run validate-content
+npm run build
+```
+
+---
 
 ## Production Docker Architecture
 
-The application runs on a single AWS EC2 instance using Docker Compose:
+```
+Internet (80/443)
+     |
+ [Edge Nginx]          ← public, terminates TLS
+     |
+     +-- /api/* --> [Backend: Fastify:4000]  --> [PostgreSQL]
+     |
+     +-- /*      --> [Frontend: nginx:80]    (React SPA)
+```
 
-- **Caddy:** Reverse proxy and automatic HTTPS (ports 80/443). Routes `/api/*` to backend and other requests to frontend.
-- **Frontend Nginx:** Serves the compiled React SPA.
-- **Backend Fastify:** API server connected to PostgreSQL.
-- **PostgreSQL:** Primary database with a persistent volume.
+- Only port 80 and 443 are publicly accessible.
+- Backend, frontend, and PostgreSQL have no public host-port bindings.
+- pgAdmin is disabled by default; start it with `--profile tools`.
 
-## Manual EC2 Deployment Outline
+---
 
-1. SSH into the EC2 instance.
-2. Pull the latest code from the `main` branch.
-3. Build the production containers: `docker compose -f docker-compose.prod.yml build`
-4. Start/update the stack: `docker compose -f docker-compose.prod.yml up -d`
+## EC2 Deployment
 
-## Voice-tools Purpose
+See [docs/EC2_DEPLOYMENT.md](docs/EC2_DEPLOYMENT.md) for the complete deployment guide.
 
-The `voice-tools` directory contains offline Python scripts used by content creators or administrators to generate child-friendly audio (using TTS providers like Azure) and validate it. Audio is uploaded to S3 manually after human review.
+**Quick start (after initial SSL setup):**
 
-## Current Implementation Status
+```bash
+git clone https://github.com/Sath2003/Akshar.git
+cd Akshar
+cp .env.example .env
+# Edit .env with your values
+./scripts/init-ssl.sh
+```
 
-The repository-cleanup and scaffold phase is complete. The project is prepared for the next development phases with a simplified architecture and separated content module.
+---
 
-## Next Planned Phase
+## Assessment API
 
-Authentication, Prisma curriculum models, and lesson development.
+See [docs/ASSESSMENT_API.md](docs/ASSESSMENT_API.md).
+
+**Endpoint:** `POST /api/v1/assess`
+
+The frontend never sends the correct answer. The backend resolves the authoritative answer by question ID.
+
+---
+
+## Audio Workflow
+
+See [docs/AUDIO_WORKFLOW.md](docs/AUDIO_WORKFLOW.md).
+
+Audio is pre-generated offline using `voice-tools/` (Azure Speech SDK) and uploaded to S3 after human review. The backend serves short-lived signed S3 URLs.
+
+---
+
+## Optional pgAdmin
+
+```bash
+docker compose --profile tools up -d pgadmin
+# Access at http://127.0.0.1:5050 (localhost only — never public)
+```
