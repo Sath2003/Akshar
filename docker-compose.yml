@@ -1,5 +1,66 @@
 services:
-  # ── Edge Nginx Reverse Proxy ───────────────────────────────────────────────
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-education}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-education}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-education}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Fastify Backend ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    expose:
+      - "4000"
+    networks:
+      - app
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:4000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── React Frontend (nginx static server) ─────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ── Edge Nginx (SSL termination + reverse proxy) ──────────────────────────
   nginx:
     image: nginx:1.27.4-alpine
     restart: unless-stopped
@@ -11,128 +72,22 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     networks:
-      - edge
       - app
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost/api/v1/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
+      - frontend
+      - backend
 
-  # ── Certbot (one-shot renewal via scripts/renew-ssl.sh) ───────────────────
+  # ── Certbot (run manually via: docker compose --profile certbot run certbot) ──
   certbot:
     image: certbot/certbot:latest
+    profiles:
+      - certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    # No restart — only runs on demand from init-ssl.sh and renew-ssl.sh
     restart: "no"
-    profiles:
-      - certbot
-
-  # ── React Frontend (internal nginx static server) ─────────────────────────
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    restart: unless-stopped
-    expose:
-      - "80"
-    networks:
-      - app
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:80/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-
-  # ── Fastify Backend ───────────────────────────────────────────────────────
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: 4000
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      CORS_ORIGIN: ${CORS_ORIGIN:-https://sathvikdevops.online}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-education}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-education}}
-      COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
-      # Session & Auth
-      SESSION_SECRET: ${SESSION_SECRET}
-      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-akshar_session}
-      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
-      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
-      LOGIN_RATE_LIMIT_WINDOW_MINUTES: ${LOGIN_RATE_LIMIT_WINDOW_MINUTES:-15}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-sathvikdevops.online}
-      # AWS / S3 Audio
-      AWS_REGION: ${AWS_REGION:-ap-south-1}
-      S3_ASSETS_BUCKET: ${S3_ASSETS_BUCKET:-}
-      S3_AUDIO_PREFIX: ${S3_AUDIO_PREFIX:-audio/}
-      S3_SIGNED_URL_TTL_SECONDS: ${S3_SIGNED_URL_TTL_SECONDS:-900}
-    expose:
-      - "4000"
-    networks:
-      - app
-      - db
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:4000/api/v1/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  # ── PostgreSQL ────────────────────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-education}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
-      POSTGRES_DB: ${POSTGRES_DB:-education}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-education}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-
-  # ── pgAdmin (optional — enable with: docker compose --profile tools up -d pgadmin) ──
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    profiles:
-      - tools
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@sathvikdevops.online}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change-me}
-    ports:
-      - "127.0.0.1:5050:80"
-    networks:
-      - db
-    depends_on:
-      postgres:
-        condition: service_healthy
 
 networks:
-  edge:
-    name: akshar-edge
   app:
     name: akshar-app
   db:

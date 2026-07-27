@@ -1,43 +1,24 @@
-FROM node:22-bookworm-slim AS base
+FROM node:22-bookworm-slim
 WORKDIR /app
-RUN apt-get update -y && apt-get install -y openssl
 
-# ── Build stage ───────────────────────────────────────────────────────────────
-FROM base AS builder
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
-# Copy workspace manifests first (layer cache)
+# Install dependencies
 COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
 COPY content/package.json ./content/
-
-RUN npm ci
+RUN npm ci --omit=dev
 
 # Copy source
 COPY shared ./shared
 COPY backend ./backend
 COPY content ./content
 
-# Generate Prisma client (must happen after schema is copied)
+# Generate Prisma client
 RUN npx prisma generate --schema=backend/prisma/schema.prisma
-
-# Remove development-only dependencies
-RUN npm prune --omit=dev
-
-# ── Runtime stage ─────────────────────────────────────────────────────────────
-FROM base AS runner
-
-# Copy pruned node_modules and source from builder
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/shared ./shared
-COPY --from=builder /app/backend ./backend
-COPY --from=builder /app/content ./content
-
-# Run as non-root user
-USER node
 
 EXPOSE 4000
 
-# Run migrations then start the server
+# Migrate then start
 CMD ["sh", "-c", "npx prisma migrate deploy --schema=backend/prisma/schema.prisma && node backend/src/server.js"]
