@@ -1,2 +1,4 @@
 /* Main Tailwind Entry */
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
