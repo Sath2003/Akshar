@@ -1,5 +1,6 @@
-FROM node:22.12.0-alpine AS base
+FROM node:22-bookworm-slim AS base
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl
 
 # ── Build stage ───────────────────────────────────────────────────────────────
 FROM base AS builder
