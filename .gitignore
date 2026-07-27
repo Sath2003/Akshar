@@ -43,4 +43,6 @@ certbot/www/
 venv/
 .venv/
 audio/
+# Allow the backend audio service source code to be tracked
+!backend/src/services/audio/
 *.mock
