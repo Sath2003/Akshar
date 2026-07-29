@@ -13,15 +13,89 @@ import crypto from 'crypto'
 export async function authRoutes(app) {
   const cookieName = app.env.SESSION_COOKIE_NAME || 'akshar_session'
 
-  // POST /api/v1/auth/register
+  // POST /api/v1/auth/register/school
   app.post(
-    '/auth/register',
+    '/auth/register/school',
     {
       schema: {
         body: {
           type: 'object',
-          required: ['username', 'email', 'password', 'displayName', 'role'],
+          required: ['schoolName', 'schoolCode', 'adminName', 'adminUsername', 'adminEmail', 'adminPassword'],
           properties: {
+            schoolName: { type: 'string', minLength: 2 },
+            schoolCode: { type: 'string', minLength: 3 },
+            adminName: { type: 'string', minLength: 2 },
+            adminUsername: { type: 'string', minLength: 3 },
+            adminEmail: { type: 'string', format: 'email' },
+            adminPassword: { type: 'string', minLength: 6 }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      const { schoolName, schoolCode, adminName, adminUsername, adminEmail, adminPassword } = request.body
+      
+      const normalizedCode = schoolCode.toUpperCase()
+      const normalizedUsername = adminUsername.toLowerCase()
+
+      // Check if school code exists
+      const existingSchool = await prisma.school.findUnique({
+        where: { code: normalizedCode }
+      })
+      
+      if (existingSchool) {
+        return reply.code(400).send({ error: 'School code is already in use' })
+      }
+
+      // Check if username exists
+      const existingUser = await prisma.user.findFirst({
+        where: { usernameNormalized: normalizedUsername }
+      })
+
+      if (existingUser) {
+        return reply.code(400).send({ error: 'Admin username is already in use' })
+      }
+
+      const passwordHash = await hashPassword(adminPassword)
+
+      // Transaction to create school and admin user
+      await prisma.$transaction(async (tx) => {
+        const school = await tx.school.create({
+          data: {
+            name: schoolName,
+            code: normalizedCode,
+            status: 'ACTIVE'
+          }
+        })
+
+        await tx.user.create({
+          data: {
+            username: adminUsername,
+            usernameNormalized: normalizedUsername,
+            email: adminEmail,
+            displayName: adminName,
+            passwordHash,
+            role: 'ADMIN',
+            schoolId: school.id,
+            status: 'ACTIVE'
+          }
+        })
+      })
+
+      return reply.code(201).send({ success: true, message: 'School registered successfully. You can now log in.' })
+    }
+  )
+
+  // POST /api/v1/auth/register/user
+  app.post(
+    '/auth/register/user',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['schoolCode', 'username', 'email', 'password', 'displayName', 'role'],
+          properties: {
+            schoolCode: { type: 'string', minLength: 3 },
             username: { type: 'string', minLength: 3 },
             email: { type: 'string', format: 'email' },
             password: { type: 'string', minLength: 6 },
@@ -32,30 +106,34 @@ export async function authRoutes(app) {
       },
     },
     async (request, reply) => {
-      const { username, email, password, displayName, role } = request.body
+      const { schoolCode, username, email, password, displayName, role } = request.body
+      const normalizedCode = schoolCode.toUpperCase()
       const normalizedUsername = username.toLowerCase()
 
-      // Check if username already exists
+      // Find the school
+      const school = await prisma.school.findUnique({
+        where: { code: normalizedCode }
+      })
+
+      if (!school || school.status !== 'ACTIVE') {
+        return reply.code(400).send({ error: 'Invalid or inactive School Code' })
+      }
+
+      // Check if username already exists in this school
       const existingUser = await prisma.user.findFirst({
-        where: { usernameNormalized: normalizedUsername },
+        where: { 
+          usernameNormalized: normalizedUsername,
+          schoolId: school.id 
+        },
       })
 
       if (existingUser) {
-        return reply.code(400).send({ error: 'Username already exists' })
-      }
-
-      // For this simplified flow, assign them to the first active school found
-      const school = await prisma.school.findFirst({
-        where: { status: 'ACTIVE' }
-      })
-
-      if (!school) {
-        return reply.code(500).send({ error: 'No active school found to register against' })
+        return reply.code(400).send({ error: 'Username already exists in this school' })
       }
 
       const passwordHash = await hashPassword(password)
 
-      const newUser = await prisma.user.create({
+      await prisma.user.create({
         data: {
           username,
           usernameNormalized: normalizedUsername,

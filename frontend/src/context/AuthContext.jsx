@@ -26,8 +26,22 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
-  const register = async (userData) => {
-    const res = await fetch('/api/v1/auth/register', {
+  const registerSchool = async (schoolData) => {
+    const res = await fetch('/api/v1/auth/register/school', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(schoolData),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'School registration failed');
+    }
+    return res.json();
+  };
+
+  const registerUser = async (userData) => {
+    const res = await fetch('/api/v1/auth/register/user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
@@ -35,9 +49,8 @@ export function AuthProvider({ children }) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || errorData.message || 'Registration failed');
+      throw new Error(errorData.error || errorData.message || 'User registration failed');
     }
-    
     return res.json();
   };
 
@@ -91,7 +104,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, verifyOtp, logout, register, loading }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout, registerSchool, registerUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
