@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, GraduationCap, ShieldCheck, ArrowLeft, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/Input';
@@ -168,6 +168,13 @@ export function Login() {
                   Sign In
                 </Button>
               </form>
+              
+              <div className="mt-6 text-center text-sm">
+                <span className="text-gray-500">Don't have an account? </span>
+                <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                  Register here
+                </Link>
+              </div>
             </div>
           )}
 
