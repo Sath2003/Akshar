@@ -6,6 +6,7 @@ import cookie from '@fastify/cookie'
 
 import authPlugin from './plugins/auth.js'
 import { registerRoutes } from './routes/index.js'
+import { initCronJobs } from './services/notifications/cron-service.js'
 
 /**
  * Build and configure the Fastify application.
@@ -57,6 +58,8 @@ export function buildApp(env) {
   })
 
   void app.register(registerRoutes, { prefix: '/api/v1' })
+
+  initCronJobs(app)
 
   return app
 }

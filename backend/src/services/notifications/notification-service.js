@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail'
+import nodemailer from 'nodemailer'
 import twilio from 'twilio'
 import { env } from '../../env.js'
 
@@ -7,30 +7,39 @@ if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN) {
   twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN)
 }
 
-if (env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(env.SENDGRID_API_KEY)
+let transporter = null
+if (env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_PORT === 465, // true for 465, false for other ports
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+    },
+  })
 }
 
 /**
- * Send an email using SendGrid
+ * Send an email using SMTP (Nodemailer)
  */
 export async function sendEmail({ to, subject, text, html }) {
-  if (!env.SENDGRID_API_KEY || !env.SENDGRID_FROM_EMAIL) {
-    console.warn(`[Email Notification Skipped] Missing SendGrid config. To: ${to}, Subject: ${subject}`)
+  if (!transporter || !env.SMTP_FROM_EMAIL) {
+    console.warn(`[Email Notification Skipped] Missing SMTP config. To: ${to}, Subject: ${subject}`)
     return false
   }
 
   try {
-    await sgMail.send({
+    await transporter.sendMail({
+      from: env.SMTP_FROM_EMAIL,
       to,
-      from: env.SENDGRID_FROM_EMAIL,
       subject,
       text,
       html,
     })
     return true
   } catch (error) {
-    console.error('SendGrid email error:', error)
+    console.error('SMTP email error:', error)
     return false
   }
 }
