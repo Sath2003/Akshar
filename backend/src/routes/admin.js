@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js'
 import { hashPassword } from '../lib/password.js'
 import { revokeAllUserSessions } from '../services/auth/session-service.js'
+import { sendEmail } from '../services/notifications/notification-service.js'
 
 /**
  * Admin management routes.
@@ -128,6 +129,15 @@ export async function adminRoutes(app) {
           entityId: user.id,
         },
       }).catch(() => {})
+
+      if (email) {
+        sendEmail({
+          to: email,
+          subject: `Welcome to Akshar, ${displayName}!`,
+          text: `Your account has been created. Username: ${username}`,
+          html: `<p>Welcome to Akshar, ${displayName}!</p><p>Your account has been created with username: <strong>${username}</strong>.</p><p>Please log in to get started.</p>`,
+        }).catch((err) => app.log.error('Failed to send welcome email: ' + err.message))
+      }
 
       return reply.code(201).send({
         user: {

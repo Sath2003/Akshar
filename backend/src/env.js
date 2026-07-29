@@ -24,6 +24,22 @@ const envSchema = z
     S3_AUDIO_PREFIX: z.string().default('audio/'),
     S3_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
 
+    // ── AI Assessment ────────────────────────────────────────────────────────
+    AI_ENABLED: z.string().transform((v) => v === 'true').default('false'),
+    AI_PROVIDER: z.string().default('gemini'),
+    AI_MODEL: z.string().default('gemini-1.5-flash'),
+    GEMINI_API_KEY: z.string().optional(),
+    AI_TIMEOUT_MS: z.coerce.number().default(10000),
+
+    // ── Redis ────────────────────────────────────────────────────────────────
+    REDIS_URL: z.string().optional(),
+
+    // ── Notifications (Email/SMS) ────────────────────────────────────────────
+    SENDGRID_API_KEY: z.string().optional(),
+    SENDGRID_FROM_EMAIL: z.string().email().optional(),
+    TWILIO_ACCOUNT_SID: z.string().optional(),
+    TWILIO_AUTH_TOKEN: z.string().optional(),
+    TWILIO_PHONE_NUMBER: z.string().optional(),
     // ── CORS hardening ───────────────────────────────────────────────────────
     COOKIE_SECURE: z
       .string()

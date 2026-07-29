@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js'
+import { sendEmail } from '../services/notifications/notification-service.js'
 
 /**
  * Exam management routes.
@@ -487,6 +488,18 @@ export async function examRoutes(app) {
               studentId: s.studentId,
             })),
             skipDuplicates: true,
+          })
+
+          const users = await tx.user.findMany({
+             where: { id: { in: students.map(s => s.studentId) }, email: { not: null } }
+          })
+          users.forEach(u => {
+             sendEmail({
+                to: u.email,
+                subject: `New Exam Assigned: ${exam.title}`,
+                text: `You have been assigned a new exam: ${exam.title}.`,
+                html: `<p>Hi ${u.displayName},</p><p>You have a new exam scheduled: <strong>${exam.title}</strong>.</p>`
+             }).catch(err => app.log.error('Email error: ' + err.message))
           })
         }
 

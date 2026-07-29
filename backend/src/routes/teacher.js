@@ -1,4 +1,6 @@
 import { prisma } from '../lib/prisma.js'
+import { sendEmail } from '../services/notifications/notification-service.js'
+import { updateLeaderboard } from '../services/leaderboard/leaderboard-service.js'
 
 /**
  * Teacher Evaluation and Grading routes.
@@ -264,6 +266,7 @@ export async function teacherRoutes(app) {
 
       const attempt = await prisma.examAttempt.findFirst({
         where: { id: attemptId, exam: { schoolId } },
+        include: { exam: true, student: true },
       })
 
       if (!attempt) return reply.code(404).send({ error: 'Attempt not found' })
@@ -279,6 +282,19 @@ export async function teacherRoutes(app) {
           finalizedAt: new Date(),
         },
       })
+
+      // Update Redis Leaderboard
+      await updateLeaderboard(attempt.examId, attempt.studentId, attempt.exam.classroomId, attempt.totalAwarded)
+
+      // Send Email Notification
+      if (attempt.student.email) {
+        sendEmail({
+           to: attempt.student.email,
+           subject: `Exam Graded: ${attempt.exam.title}`,
+           text: `Your exam "${attempt.exam.title}" has been graded. Score: ${attempt.totalAwarded}`,
+           html: `<p>Hi ${attempt.student.displayName},</p><p>Your exam <strong>${attempt.exam.title}</strong> has been graded!</p><p>Your score: <strong>${attempt.totalAwarded}</strong></p>`
+        }).catch(err => app.log.error('Email error: ' + err.message))
+      }
 
       return reply.code(200).send({ success: true, message: 'Attempt grades published to student' })
     },
