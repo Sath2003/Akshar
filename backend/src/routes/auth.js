@@ -13,6 +13,65 @@ import crypto from 'crypto'
 export async function authRoutes(app) {
   const cookieName = app.env.SESSION_COOKIE_NAME || 'akshar_session'
 
+  // POST /api/v1/auth/register
+  app.post(
+    '/auth/register',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['username', 'email', 'password', 'displayName', 'role'],
+          properties: {
+            username: { type: 'string', minLength: 3 },
+            email: { type: 'string', format: 'email' },
+            password: { type: 'string', minLength: 6 },
+            displayName: { type: 'string', minLength: 2 },
+            role: { type: 'string', enum: ['STUDENT', 'TEACHER'] }
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { username, email, password, displayName, role } = request.body
+      const normalizedUsername = username.toLowerCase()
+
+      // Check if username already exists
+      const existingUser = await prisma.user.findFirst({
+        where: { usernameNormalized: normalizedUsername },
+      })
+
+      if (existingUser) {
+        return reply.code(400).send({ error: 'Username already exists' })
+      }
+
+      // For this simplified flow, assign them to the first active school found
+      const school = await prisma.school.findFirst({
+        where: { status: 'ACTIVE' }
+      })
+
+      if (!school) {
+        return reply.code(500).send({ error: 'No active school found to register against' })
+      }
+
+      const passwordHash = await hashPassword(password)
+
+      const newUser = await prisma.user.create({
+        data: {
+          username,
+          usernameNormalized: normalizedUsername,
+          email,
+          displayName,
+          passwordHash,
+          role,
+          schoolId: school.id,
+          status: 'ACTIVE'
+        }
+      })
+
+      return reply.code(201).send({ success: true, message: 'Registration successful. Please log in.' })
+    }
+  )
+
   // POST /api/v1/auth/login
   app.post(
     '/auth/login',

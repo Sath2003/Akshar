@@ -26,6 +26,21 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
+  const register = async (userData) => {
+    const res = await fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'Registration failed');
+    }
+    
+    return res.json();
+  };
+
   const login = async (username, password) => {
     const res = await fetch('/api/v1/auth/login', {
       method: 'POST',
@@ -76,7 +91,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, verifyOtp, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout, register, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 // A wrapper for routes that require authentication
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -24,8 +26,25 @@ function ProtectedRoute({ children }) {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return children;
+}
+
+// A smart component that redirects to the correct dashboard based on role
+function RoleBasedDashboard() {
+  const { user } = useAuth();
+  
+  if (!user) return <Navigate to="/login" replace />;
+  
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  return <Dashboard />;
 }
 
 export default function App() {
@@ -33,13 +52,14 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Redirect root to dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Redirect root to dynamic dashboard resolver */}
+          <Route path="/" element={<RoleBasedDashboard />} />
           
-          {/* Public Login Route */}
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
-          {/* Protected Dashboard Route */}
+          {/* Protected Standard Dashboard */}
           <Route 
             path="/dashboard" 
             element={
@@ -48,9 +68,19 @@ export default function App() {
               </ProtectedRoute>
             } 
           />
+
+          {/* Protected Admin Dashboard */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<RoleBasedDashboard />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
