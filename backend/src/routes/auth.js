@@ -1,6 +1,9 @@
 import { hashPassword, verifyPassword } from '../lib/password.js'
 import { createSession, revokeSession, revokeAllUserSessions } from '../services/auth/session-service.js'
 import { prisma } from '../lib/prisma.js'
+import { redisClient } from '../lib/redis.js'
+import { sendEmail } from '../services/notifications/notification-service.js'
+import crypto from 'crypto'
 
 /**
  * Register auth routes.
@@ -102,6 +105,81 @@ export async function authRoutes(app) {
         }).catch(() => {})
 
         return reply.code(400).send({ error: 'Invalid username or password' })
+      }
+
+      // ---------------------------------------------------------
+      // OTP Generation Step
+      // ---------------------------------------------------------
+      const otpCode = crypto.randomInt(100000, 999999).toString()
+      
+      if (redisClient) {
+        await redisClient.setex(`otp:${user.id}`, 300, otpCode) // 5 min expiry
+      }
+      
+      let emailSent = false
+      if (user.email) {
+        const sent = await sendEmail({
+          to: user.email,
+          subject: 'Akshar Login Verification Code',
+          text: `Your login verification code is: ${otpCode}\n\nThis code expires in 5 minutes.`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; text-align: center;">
+              <h2>Akshar International</h2>
+              <p>Your secure login verification code is:</p>
+              <h1 style="font-size: 32px; letter-spacing: 4px; color: #4F46E5; background: #F3F4F6; padding: 10px; border-radius: 8px;">${otpCode}</h1>
+              <p style="color: #6B7280; font-size: 14px;">This code will expire in 5 minutes.</p>
+            </div>
+          `
+        })
+        emailSent = sent
+      }
+
+      return reply.code(200).send({
+        requiresOtp: true,
+        userId: user.id,
+        emailSent,
+        message: 'OTP sent to registered email'
+      })
+    },
+  )
+
+  // POST /api/v1/auth/verify-otp
+  app.post(
+    '/auth/verify-otp',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['userId', 'otp'],
+          properties: {
+            userId: { type: 'string' },
+            otp: { type: 'string', minLength: 6, maxLength: 6 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { userId, otp } = request.body
+      
+      if (!redisClient) {
+        return reply.code(500).send({ error: 'Redis is not configured for OTP verification' })
+      }
+
+      const storedOtp = await redisClient.get(`otp:${userId}`)
+      
+      if (!storedOtp || storedOtp !== otp) {
+        return reply.code(400).send({ error: 'Invalid or expired OTP' })
+      }
+
+      // Consume OTP
+      await redisClient.del(`otp:${userId}`)
+
+      // Retrieve full user
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      })
+      if (!user || user.status !== 'ACTIVE') {
+        return reply.code(400).send({ error: 'Invalid user state' })
       }
 
       // Create session record

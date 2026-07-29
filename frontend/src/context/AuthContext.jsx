@@ -35,7 +35,30 @@ export function AuthProvider({ children }) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Login failed');
+      throw new Error(errorData.error || errorData.message || 'Login failed');
+    }
+
+    const data = await res.json();
+    
+    // If backend requires OTP, return early without setting user
+    if (data.requiresOtp) {
+      return data;
+    }
+
+    setUser(data.user);
+    return data;
+  };
+
+  const verifyOtp = async (userId, otp) => {
+    const res = await fetch('/api/v1/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, otp }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || errorData.message || 'OTP verification failed');
     }
 
     const data = await res.json();
@@ -53,7 +76,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
