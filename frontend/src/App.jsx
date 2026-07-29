@@ -1,41 +1,58 @@
-import { useEffect, useState } from 'react'
-import { healthResponseSchema } from '@education/shared'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+
+// A wrapper for routes that require authentication
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center">
+          <svg className="animate-spin h-10 w-10 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-500 animate-pulse font-medium">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 export default function App() {
-  const [health, setHealth] = useState(null)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    fetch('/api/v1/health')
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok')
-        return res.json()
-      })
-      .then((data) => {
-        const result = healthResponseSchema.safeParse(data)
-        if (result.success) {
-          setHealth(result.data)
-        } else {
-          setError('Invalid health response shape')
-        }
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
-  }, [])
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="rounded-lg bg-white p-8 shadow-xl text-center">
-        <h1 className="text-3xl font-bold text-blue-600 mb-4">Education Platform</h1>
-        {error ? (
-          <p className="text-red-500">Error connecting to backend: {error}</p>
-        ) : health ? (
-          <p className="text-green-600">
-            Backend connected (Phase {health.phase}, Status: {health.status})
-          </p>
-        ) : (
-          <p className="text-gray-500 animate-pulse">Connecting to backend...</p>
-        )}
-      </div>
-    </div>
-  )
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Redirect root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          
+          {/* Public Login Route */}
+          <Route path="/login" element={<Login />} />
+          
+          {/* Protected Dashboard Route */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
