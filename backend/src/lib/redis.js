@@ -1,5 +1,7 @@
 import Redis from 'ioredis'
-import { env } from '../env.js'
+import { parseEnv } from '../env.js'
+
+const env = parseEnv()
 
 let redisClient = null
 

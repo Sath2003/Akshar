@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer'
 import twilio from 'twilio'
-import { env } from '../../env.js'
+import { parseEnv } from '../../env.js'
+
+const env = parseEnv()
 
 let twilioClient = null
 if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN) {
