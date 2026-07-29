@@ -8,7 +8,7 @@ This guide documents deploying Akshar on a single AWS EC2 instance (Ubuntu 22.04
 
 - An EC2 instance (t3.small or larger recommended)
 - An Elastic IP assigned to the instance
-- Domain `sathvikdevops.online` A record pointing to the Elastic IP
+- Domain `akshar.sathvikdevops.site` A record pointing to the Elastic IP
 - An S3 bucket for audio assets
 - An EC2 IAM role with `s3:GetObject` on the audio prefix
 - A Gemini API key (from https://aistudio.google.com/app/apikey)
@@ -116,10 +116,10 @@ This script:
 docker compose ps
 
 # Backend health
-curl https://sathvikdevops.online/api/v1/health
+curl https://akshar.sathvikdevops.site/api/v1/health
 
 # HTTP should redirect to HTTPS
-curl -I http://sathvikdevops.online
+curl -I http://akshar.sathvikdevops.site
 ```
 
 ---

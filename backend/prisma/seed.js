@@ -10,7 +10,7 @@ async function main() {
   const schoolCode = process.env.SEED_SCHOOL_CODE || 'AKSHAR01'
   const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin'
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'adminpassword123'
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@sathvikdevops.online'
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@akshar.sathvikdevops.site'
 
   if (!adminPassword || adminPassword === 'replace-with-strong-password') {
     throw new Error('SEED_ADMIN_PASSWORD environment variable is not configured or uses placeholder')

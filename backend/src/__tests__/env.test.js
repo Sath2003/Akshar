@@ -47,7 +47,7 @@ describe('parseEnv', () => {
     const env = parseEnv({
       ...base,
       NODE_ENV: 'production',
-      CORS_ORIGIN: 'https://sathvikdevops.online',
+      CORS_ORIGIN: 'https://akshar.sathvikdevops.site',
       DATABASE_URL: 'postgresql://education:strongpassword@postgres:5432/education',
     })
     expect(env.NODE_ENV).toBe('production')

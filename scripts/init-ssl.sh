@@ -8,7 +8,7 @@
 #   ./scripts/init-ssl.sh
 #
 # Required environment variables (from .env):
-#   APP_DOMAIN         e.g. sathvikdevops.online
+#   APP_DOMAIN         e.g. akshar.sathvikdevops.site
 #   LETSENCRYPT_EMAIL  your real email address for Let's Encrypt notifications
 #
 # Optional:
